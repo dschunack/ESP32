@@ -114,7 +114,7 @@ void loop()
 void sensorsData(char* body)
 {
   //This section reads all sensors
-  
+  int battery = analogRead(POWER_PIN);
   int waterlevel = analogRead(soilpin);
   int lightlevel = analogRead(LIGHT_PIN);
   
@@ -153,8 +153,18 @@ void sensorsData(char* body)
     /* publish the message */
     client.publish(TEMP_TOPIC, msg);
   }
+  
+  // Read battery
+  if (!isnan(battery)) 
+  {
+    snprintf (msg, 20, "%d", battery);
+    /* publish the message */
+    client.publish(BATT_TOPIC, msg);
+  }
  
   Serial.print("DevideId: "); Serial.println(deviceid);
+  Serial.print("ClientId: "); Serial.println(CLIENTID);
+  Serial.print("Battery: "); Serial.println(battery);
   Serial.print("Temperature: "); Serial.print(temperature); Serial.println(" *C");
   Serial.print("Humidity: "); Serial.print(humidity); Serial.println(" %rF");
   Serial.print("Soil: "); Serial.println(waterlevel);
