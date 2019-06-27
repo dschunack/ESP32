@@ -11,6 +11,8 @@
 #include <PubSubClient.h>
 #include "DHT.h"
 #include "credentials.h"
+/* #include "soc/soc.h" //Needed for WRITE_PERI_REG */
+/* #include "soc/rtc_cntl_reg.h" //Needed for WRITE_PERI_REG */
 
 #define DHTTYPE DHT11   // DHT 11
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
@@ -53,6 +55,7 @@ char deviceid[21];
 
 void setup() 
 {
+  /* WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //disable browout detctor */
   dht.begin();
   
   Serial.begin(115200);
