@@ -41,11 +41,17 @@ static char celsiusTemp[7];
 static char humidityTemp[7];
 char msg[20];
 
-/* topics */
-#define TEMP_TOPIC    "HiGrow/temp"
-#define HUMI_TOPIC    "HiGrow/humi"
-#define SOIL_TOPIC    "HiGrow/soil"
-#define LIGHT_TOPIC   "HiGrow/light"
+// Temporary Topic variables
+char TEMP_TOPIC[25];
+char HUMI_TOPIC[25];
+char SOIL_TOPIC[25];
+char LIGHT_TOPIC[25];
+char BATT_TOPIC[25];
+char TempTopic[15]  = "/HiGrow/temp";
+char HumiTopic[15]  = "/HiGrow/humi";
+char SoilTopic[15]  = "/HiGrow/soil";
+char LightTopic[15] = "/HiGrow/light";
+char BattTopic[15]  = "/HiGrow/batt";
 
 // Client variables 
 char linebuf[80];
@@ -71,7 +77,19 @@ void setup()
   sprintf(deviceid, "%" PRIu64, chipid);
   Serial.print("DeviceId: ");
   Serial.println(deviceid);
-
+  
+  //Set MQTT Topics with ClientID in the Name
+  strcpy(TEMP_TOPIC,CLIENTID);
+  strcat(TEMP_TOPIC,TempTopic);
+  strcpy(HUMI_TOPIC,CLIENTID);
+  strcat(HUMI_TOPIC,HumiTopic);
+  strcpy(SOIL_TOPIC,CLIENTID);
+  strcat(SOIL_TOPIC,SoilTopic);
+  strcpy(LIGHT_TOPIC,CLIENTID);
+  strcat(LIGHT_TOPIC,LightTopic);
+  strcpy(BATT_TOPIC,CLIENTID);
+  strcat(BATT_TOPIC,BattTopic);
+  
   connectWiFi();
   configureMQTT();
 }
