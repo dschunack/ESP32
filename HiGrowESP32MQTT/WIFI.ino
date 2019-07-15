@@ -4,7 +4,7 @@ void connectWiFi()
   Serial.print("Connecting to ");
   Serial.println(mySSID);
   WiFi.begin(mySSID, myPW);
-  WiFi.setHostname(CLIENTID);
+  WiFi.setHostname(deviceid);
   
   while (WiFi.status() != WL_CONNECTED) 
   {
