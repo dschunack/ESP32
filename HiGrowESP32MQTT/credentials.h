@@ -9,4 +9,3 @@ const char* BROKER = "m20.cloudmqtt.com";
 uint16_t    BRPORT = 12394;
 const char* BRUSER = "<Your Username>";
 const char* BRPWD  = "<Your Password>";
-const char* CLIENTID = "HiGrow";
