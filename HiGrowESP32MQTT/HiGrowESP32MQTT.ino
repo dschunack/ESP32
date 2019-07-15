@@ -11,8 +11,8 @@
 #include <PubSubClient.h>
 #include "DHT.h"
 #include "credentials.h"
-/* #include "soc/soc.h" //Needed for WRITE_PERI_REG */
-/* #include "soc/rtc_cntl_reg.h" //Needed for WRITE_PERI_REG */
+#include "soc/soc.h" //Needed for WRITE_PERI_REG
+#include "soc/rtc_cntl_reg.h" //Needed for WRITE_PERI_REG
 
 #define DHTTYPE DHT11   // DHT 11
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
@@ -20,7 +20,7 @@
 #define uS_TO_S_FACTOR 1000000
 
 //int DEEPSLEEP_SECONDS = 1800; // 30 min
-int DEEPSLEEP_SECONDS = 180; // 3 min
+int DEEPSLEEP_SECONDS = 1800; // 30 min
 
 /* create an instance of PubSubClient client */
 WiFiClient espClient;
@@ -42,16 +42,16 @@ static char humidityTemp[7];
 char msg[20];
 
 // Temporary Topic variables
-char TEMP_TOPIC[25];
-char HUMI_TOPIC[25];
-char SOIL_TOPIC[25];
-char LIGHT_TOPIC[25];
-char BATT_TOPIC[25];
+char TEMP_TOPIC[35];
+char HUMI_TOPIC[35];
+char SOIL_TOPIC[35];
+/* char LIGHT_TOPIC[35]; */
+/* char BATT_TOPIC[35]; */
 char TempTopic[15]  = "/HiGrow/temp";
 char HumiTopic[15]  = "/HiGrow/humi";
 char SoilTopic[15]  = "/HiGrow/soil";
-char LightTopic[15] = "/HiGrow/light";
-char BattTopic[15]  = "/HiGrow/batt";
+/* char LightTopic[15] = "/HiGrow/light"; */
+/* char BattTopic[15]  = "/HiGrow/batt"; */
 
 // Client variables 
 char linebuf[80];
@@ -61,11 +61,11 @@ char deviceid[21];
 
 void setup() 
 {
-  /* WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //disable browout detctor */
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //disable browout detctor
   dht.begin();
   
   Serial.begin(115200);
-  delay(2000); // wait for monitor
+  delay(1000); // wait for monitor
 
   esp_sleep_enable_timer_wakeup(DEEPSLEEP_SECONDS * uS_TO_S_FACTOR);
 
@@ -78,17 +78,17 @@ void setup()
   Serial.print("DeviceId: ");
   Serial.println(deviceid);
   
-  //Set MQTT Topics with ClientID in the Name
-  strcpy(TEMP_TOPIC,CLIENTID);
+  //Set MQTT Topics with deviceid in the Name
+  strcpy(TEMP_TOPIC,deviceid);
   strcat(TEMP_TOPIC,TempTopic);
-  strcpy(HUMI_TOPIC,CLIENTID);
+  strcpy(HUMI_TOPIC,deviceid);
   strcat(HUMI_TOPIC,HumiTopic);
-  strcpy(SOIL_TOPIC,CLIENTID);
+  strcpy(SOIL_TOPIC,deviceid);
   strcat(SOIL_TOPIC,SoilTopic);
-  strcpy(LIGHT_TOPIC,CLIENTID);
-  strcat(LIGHT_TOPIC,LightTopic);
-  strcpy(BATT_TOPIC,CLIENTID);
-  strcat(BATT_TOPIC,BattTopic);
+  /* strcpy(LIGHT_TOPIC,deviceid); */
+  /* strcat(LIGHT_TOPIC,LightTopic); */
+  /* strcpy(BATT_TOPIC,deviceid); */
+  /* strcat(BATT_TOPIC,BattTopic); */
   
   connectWiFi();
   configureMQTT();
@@ -97,8 +97,7 @@ void setup()
 void loop() 
 {
   char body[1024];
-  digitalWrite(16, LOW); //switched on
-
+ 
   /* if client was disconnected then try to reconnect again */
   if (!client.connected()) {
     mqttconnect();
@@ -107,14 +106,17 @@ void loop()
   sensorsData(body);
   delay(500);
   WiFi.disconnect(true);
-  Serial.println("Going to Deep Sleep..."); esp_deep_sleep_start();    // uncomment for deep sleep
-  delay(5000);               // used for test
+  Serial.println("Going to Deep Sleep...");
+  Serial.flush(); 
+  esp_deep_sleep_start();    // uncomment for deep sleep
+  Serial.println("This will never be printed");
+  /* delay(5000);               // used for test */
 }
 
 void sensorsData(char* body)
 {
   //This section reads all sensors
-  int battery = analogRead(POWER_PIN);
+  /* int battery = analogRead(POWER_PIN); */
   int waterlevel = analogRead(soilpin);
   int lightlevel = analogRead(LIGHT_PIN);
   
@@ -127,14 +129,14 @@ void sensorsData(char* body)
     client.publish(SOIL_TOPIC, msg);
   }
   
-  lightlevel = map(lightlevel, 0, 4095, 0, 1023);
-  lightlevel = constrain(lightlevel, 0, 1023);
-  if (!isnan(lightlevel)) 
-  {
-    snprintf (msg, 20, "%d", lightlevel);
+  /* lightlevel = map(lightlevel, 0, 4095, 0, 1023); */
+  /*lightlevel = constrain(lightlevel, 0, 1023); */
+  /*if (!isnan(lightlevel))  */
+  /* { */
+  /*  snprintf (msg, 20, "%d", lightlevel); */
     /* publish the message */
-    client.publish(LIGHT_TOPIC, msg);
-  }
+  /*  client.publish(LIGHT_TOPIC, msg); */
+  /* } */
   
   // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
   float humidity = dht.readHumidity();
@@ -155,19 +157,18 @@ void sensorsData(char* body)
   }
   
   // Read battery
-  if (!isnan(battery)) 
-  {
-    snprintf (msg, 20, "%d", battery);
+  /* if (!isnan(battery))  */
+  /* { */
+  /*   snprintf (msg, 20, "%d", battery); */
     /* publish the message */
-    client.publish(BATT_TOPIC, msg);
-  }
+  /*   client.publish(BATT_TOPIC, msg); */
+  /* } */
  
   Serial.print("DevideId: "); Serial.println(deviceid);
-  Serial.print("ClientId: "); Serial.println(CLIENTID);
-  Serial.print("Battery: "); Serial.println(battery);
+  /* Serial.print("Battery: "); Serial.println(battery); */
   Serial.print("Temperature: "); Serial.print(temperature); Serial.println(" *C");
   Serial.print("Humidity: "); Serial.print(humidity); Serial.println(" %rF");
   Serial.print("Soil: "); Serial.println(waterlevel);
-  Serial.print("Light: "); Serial.println(lightlevel);
+  /* Serial.print("Light: "); Serial.println(lightlevel); */
 }
 
