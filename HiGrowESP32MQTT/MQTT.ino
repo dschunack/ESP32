@@ -23,14 +23,14 @@ void mqttconnect() {
     Serial.print("MQTT connecting ...");
     
     /* connect now */
-    if (client.connect(CLIENTID, BRUSER, BRPWD)) {
+    if (client.connect(deviceid, BRUSER, BRPWD)) {
       Serial.println("connected");
     } else {
       Serial.print("failed, status code =");
       Serial.print(client.state());
-      Serial.println("try again in 5 seconds");
-      /* Wait 5 seconds before retrying */
-      delay(5000);
+      Serial.println("try again in 2 seconds");
+      /* Wait 2 seconds before retrying */
+      delay(2000);
     }
   }
 }
