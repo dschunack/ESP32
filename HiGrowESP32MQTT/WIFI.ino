@@ -8,10 +8,10 @@ void connectWiFi()
   
   while (WiFi.status() != WL_CONNECTED) 
   {
-    delay(500);
+    delay(100);
     Serial.print(".");
     count++;
-    if (count > 15) ESP.restart();
+    if (count > 25) ESP.restart();
   }
   Serial.println("");
   Serial.println("WiFi connected");
