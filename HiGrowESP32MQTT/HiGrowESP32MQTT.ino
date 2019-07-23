@@ -61,7 +61,7 @@ char deviceid[21];
 
 void setup() 
 {
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //disable browout detctor
+  /* WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //disable browout detctor */
   dht.begin();
   
   Serial.begin(115200);
@@ -92,6 +92,8 @@ void setup()
   
   connectWiFi();
   configureMQTT();
+  
+  /* viod loop section */
   char body[1024];
   /* digitalWrite(16, LOW); //switched on */
 
