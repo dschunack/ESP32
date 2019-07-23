@@ -11,8 +11,8 @@
 #include <PubSubClient.h>
 #include "DHT.h"
 #include "credentials.h"
-#include "soc/soc.h" //Needed for WRITE_PERI_REG
-#include "soc/rtc_cntl_reg.h" //Needed for WRITE_PERI_REG
+/* #include "soc/soc.h" //Needed for WRITE_PERI_REG */
+/* #include "soc/rtc_cntl_reg.h" //Needed for WRITE_PERI_REG */
 
 #define DHTTYPE DHT11   // DHT 11
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
@@ -31,7 +31,7 @@ uint64_t chipid;
 const int dhtpin = 22;
 const int soilpin = 32;
 const int POWER_PIN = 34;
-const int LIGHT_PIN = 33;
+/* const int LIGHT_PIN = 33; */
 
 // Initialize DHT sensor.
 DHT dht(dhtpin, DHTTYPE);
@@ -92,17 +92,14 @@ void setup()
   
   connectWiFi();
   configureMQTT();
-}
-
-void loop() 
-{
   char body[1024];
- 
+  /* digitalWrite(16, LOW); //switched on */
+
   /* if client was disconnected then try to reconnect again */
   if (!client.connected()) {
     mqttconnect();
   }
-
+  
   sensorsData(body);
   delay(500);
   WiFi.disconnect(true);
@@ -113,12 +110,14 @@ void loop()
   /* delay(5000);               // used for test */
 }
 
+void loop() {}
+
 void sensorsData(char* body)
 {
   //This section reads all sensors
   /* int battery = analogRead(POWER_PIN); */
   int waterlevel = analogRead(soilpin);
-  int lightlevel = analogRead(LIGHT_PIN);
+  /* int lightlevel = analogRead(LIGHT_PIN); */
   
   waterlevel = map(waterlevel, 0, 4095, 0, 1023);
   waterlevel = constrain(waterlevel, 0, 1023);
