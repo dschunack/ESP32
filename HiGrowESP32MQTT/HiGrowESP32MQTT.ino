@@ -8,6 +8,7 @@
 */
 
 #include <WiFi.h>
+#include <esp_wifi.h>
 #include <PubSubClient.h>
 #include "DHT.h"
 #include "credentials.h"
@@ -104,7 +105,13 @@ void setup()
   
   sensorsData(body);
   delay(500);
-  WiFi.disconnect(true);
+  /*WiFi.disconnect(true);*/
+  esp_wifi_disconnect();
+  esp_wifi_stop();
+  /* esp_wifi_deinit(); */
+
+  //esp_deep_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+  /* Serial.println("Configured all RTC Peripherals to be powered down in sleep"); */
   Serial.println("Going to Deep Sleep...");
   Serial.flush(); 
   esp_deep_sleep_start();    // uncomment for deep sleep
