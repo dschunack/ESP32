@@ -8,10 +8,11 @@
 */
 
 #include <WiFi.h>
-#include <esp_wifi.h>
 #include <PubSubClient.h>
 #include "DHT.h"
 #include "credentials.h"
+#include <esp_wifi.h>
+#include "esp_sleep.h"
 /* #include "soc/soc.h" //Needed for WRITE_PERI_REG */
 /* #include "soc/rtc_cntl_reg.h" //Needed for WRITE_PERI_REG */
 
@@ -69,6 +70,11 @@ void setup()
   delay(1000); // wait for monitor
 
   esp_sleep_enable_timer_wakeup(DEEPSLEEP_SECONDS * uS_TO_S_FACTOR);
+  /* esp_sleep_pd_config(ESP_PD_DOMAIN_MAX, ESP_PD_OPTION_OFF); */
+  /* esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF); */
+  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
+  esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
 
   pinMode(16, OUTPUT); // blue LED
   pinMode(POWER_PIN, INPUT);
@@ -93,8 +99,11 @@ void setup()
   
   connectWiFi();
   configureMQTT();
-  
+
   /* viod loop section */
+}
+
+void loop() {
   char body[1024];
   /* digitalWrite(16, LOW); //switched on */
 
@@ -110,16 +119,13 @@ void setup()
   esp_wifi_stop();
   /* esp_wifi_deinit(); */
 
-  //esp_deep_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
   /* Serial.println("Configured all RTC Peripherals to be powered down in sleep"); */
   Serial.println("Going to Deep Sleep...");
   Serial.flush(); 
   esp_deep_sleep_start();    // uncomment for deep sleep
   Serial.println("This will never be printed");
-  /* delay(5000);               // used for test */
+  /* delay(5000);               // used for test */  
 }
-
-void loop() {}
 
 void sensorsData(char* body)
 {
@@ -179,4 +185,3 @@ void sensorsData(char* body)
   Serial.print("Soil: "); Serial.println(waterlevel);
   /* Serial.print("Light: "); Serial.println(lightlevel); */
 }
-
