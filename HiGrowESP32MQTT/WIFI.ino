@@ -2,7 +2,7 @@ void connectWiFi()
 {
   int count = 0;
   esp_wifi_start();
-  delay(200);
+  delay(300);
   Serial.print("Connecting to ");
   Serial.println(mySSID);
   WiFi.begin(mySSID, myPW);
