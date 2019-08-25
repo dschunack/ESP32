@@ -13,12 +13,12 @@
 #include "credentials.h"
 #include <esp_wifi.h>
 #include "esp_sleep.h"
+#include "esp32-hal-cpu.h"
+
 /* #include "soc/soc.h" //Needed for WRITE_PERI_REG */
 /* #include "soc/rtc_cntl_reg.h" //Needed for WRITE_PERI_REG */
 
 #define DHTTYPE DHT11   // DHT 11
-//#define DHTTYPE DHT21   // DHT 21 (AM2301)
-//#define DHTTYPE DHT22   // DHT 22  (AM2302), AM2321
 #define uS_TO_S_FACTOR 1000000
 
 //int DEEPSLEEP_SECONDS = 1800; // 30 min
@@ -31,8 +31,8 @@ PubSubClient client(espClient);
 uint64_t chipid;
 
 const int dhtpin = 22;
-const int soilpin = 32;
 const int POWER_PIN = 34;
+const int soilpin = 32;
 /* const int LIGHT_PIN = 33; */
 
 // Initialize DHT sensor.
@@ -63,27 +63,31 @@ char deviceid[21];
 
 void setup() 
 {
-  /* WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //disable browout detctor */
-  dht.begin();
-  
-  Serial.begin(115200);
-  delay(1000); // wait for monitor
+  pinMode(16, OUTPUT); // blue LED
+  /* --- pinMode(POWER_PIN, INPUT); --- */
+  digitalWrite(16, LOW);  
 
+  delay(1000); // wait for monitor and fix deep sleep bug: https://www.hackster.io/nickthegreek82/esp32-deep-sleep-tutorial-4398a7
+  
+  /* WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG,0); //disable browout detctor */
+    
   esp_sleep_enable_timer_wakeup(DEEPSLEEP_SECONDS * uS_TO_S_FACTOR);
-  /* esp_sleep_pd_config(ESP_PD_DOMAIN_MAX, ESP_PD_OPTION_OFF); */
-  /* esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF); */
+  esp_sleep_pd_config(ESP_PD_DOMAIN_MAX, ESP_PD_OPTION_OFF);
+  esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_OFF);
   esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
   esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
   esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
 
-  pinMode(16, OUTPUT); // blue LED
-  pinMode(POWER_PIN, INPUT);
-  digitalWrite(16, LOW);  
-
+  setCpuFrequencyMhz(160); // reduce CPU Speed, problems with 80MHz, DHT is not working, only with 160MHz or more
+  
+  Serial.begin(115200);
+  dht.begin();
+    
   chipid = ESP.getEfuseMac();
   sprintf(deviceid, "%" PRIu64, chipid);
   Serial.print("DeviceId: ");
   Serial.println(deviceid);
+
   
   //Set MQTT Topics with deviceid in the Name
   strcpy(TEMP_TOPIC,deviceid);
@@ -99,13 +103,10 @@ void setup()
   
   connectWiFi();
   configureMQTT();
-
-  /* viod loop section */
 }
 
 void loop() {
   char body[1024];
-  /* digitalWrite(16, LOW); //switched on */
 
   /* if client was disconnected then try to reconnect again */
   if (!client.connected()) {
@@ -113,8 +114,8 @@ void loop() {
   }
   
   sensorsData(body);
-  delay(500);
-  /*WiFi.disconnect(true);*/
+  delay(500); //necessary to finish MQTT Communication
+  /* WiFi.disconnect(true); */ //Not needed, use esp_wifi_disconnect instead
   esp_wifi_disconnect();
   esp_wifi_stop();
   /* esp_wifi_deinit(); */
@@ -130,19 +131,18 @@ void loop() {
 void sensorsData(char* body)
 {
   //This section reads all sensors
-  /* int battery = analogRead(POWER_PIN); */
+  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+    
   int waterlevel = analogRead(soilpin);
-  /* int lightlevel = analogRead(LIGHT_PIN); */
-  
   waterlevel = map(waterlevel, 0, 4095, 0, 1023);
   waterlevel = constrain(waterlevel, 0, 1023);
   if (!isnan(waterlevel)) 
   {
     snprintf (msg, 20, "%d", waterlevel);
-    /* publish the message */
     client.publish(SOIL_TOPIC, msg);
   }
   
+  /* int lightlevel = analogRead(LIGHT_PIN); */
   /* lightlevel = map(lightlevel, 0, 4095, 0, 1023); */
   /*lightlevel = constrain(lightlevel, 0, 1023); */
   /*if (!isnan(lightlevel))  */
@@ -151,8 +151,8 @@ void sensorsData(char* body)
     /* publish the message */
   /*  client.publish(LIGHT_TOPIC, msg); */
   /* } */
-  
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+
+  // Read humidity
   float humidity = dht.readHumidity();
   if (!isnan(humidity)) 
   {
@@ -171,17 +171,21 @@ void sensorsData(char* body)
   }
   
   // Read battery
+  /* int battery = analogRead(POWER_PIN); */
   /* if (!isnan(battery))  */
   /* { */
   /*   snprintf (msg, 20, "%d", battery); */
     /* publish the message */
   /*   client.publish(BATT_TOPIC, msg); */
   /* } */
+  
+  int cpuspeed = getCpuFrequencyMhz();
  
   Serial.print("DevideId: "); Serial.println(deviceid);
   /* Serial.print("Battery: "); Serial.println(battery); */
   Serial.print("Temperature: "); Serial.print(temperature); Serial.println(" *C");
   Serial.print("Humidity: "); Serial.print(humidity); Serial.println(" %rF");
-  Serial.print("Soil: "); Serial.println(waterlevel);
+  Serial.print("Soil: "); Serial.println(waterlevel); 
+  Serial.print("CPUSpeed: "); Serial.println(cpuspeed); 
   /* Serial.print("Light: "); Serial.println(lightlevel); */
 }
